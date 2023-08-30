@@ -1,11 +1,8 @@
 ﻿using APIBooking.Domain.Entities;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Repositories.Interface;
-using Repositories.Repository;
-using Microsoft.Extensions.Logging;
-using Microsoft.EntityFrameworkCore;
-using APIBooking.Data.Context;
+using System.Text;
+using System.Text.Json;
 
 namespace WebAPI.Controllers
 {
@@ -14,14 +11,17 @@ namespace WebAPI.Controllers
     public class ReservationController : ControllerBase
     {
         private readonly IReservationRepository _reservationRepository;
-        private readonly ILogger _logger;
         private readonly IHouseRepository _houseRepository;
+        private readonly IClientRepository _clientRepository;
+        private readonly IHttpClientFactory _httpClientFactory;
         private EntityHouse _house;
 
-        public ReservationController(IReservationRepository reservationRepository, IHouseRepository houseRepository)
+        public ReservationController(IReservationRepository reservationRepository, IHouseRepository houseRepository, IClientRepository clientRepository, IHttpClientFactory httpClientFactory)
         {
             _reservationRepository = reservationRepository;
             _houseRepository = houseRepository;
+            _clientRepository = clientRepository;
+            _httpClientFactory = httpClientFactory;
         }
 
 
@@ -64,10 +64,35 @@ namespace WebAPI.Controllers
             entityReservation.startDate = entityReservation.startDate.Date; // Apenas a parte da data, sem a hora
             entityReservation.endDate = entityReservation.endDate.Date; // Apenas a parte da data, sem a hora
 
+            // Create API Discount request objetct
+            var discountRequest = new
+            {
+                userId = entityReservation.clientId.ToString(),
+                houseId = entityReservation.houseId.ToString(),
+                discountCode = entityReservation.discountCode
+            };
 
+            //Serialize object
+            var discountRequestBody = JsonSerializer.Serialize(discountRequest);
 
-            await _reservationRepository.Insert(entityReservation);
-            return Ok($"Operation completed successfully. Reservation {entityReservation.id} succesfully saved");
+            // Send request to API Discount
+            var client = _httpClientFactory.CreateClient();
+            var response = await client.PostAsync("https://sbv2bumkomidlxwffpgbh4k6jm0ydskh.lambda-url.us-east-1.on.aws/", new StringContent(discountRequestBody, Encoding.UTF8, "application/json"));
+
+            // Verificar a resposta da API Discount
+            if (response.IsSuccessStatusCode)
+            {
+                // A API Discount retornou com sucesso, continue com a lógica de reserva
+                await _reservationRepository.Insert(entityReservation);
+                return Ok($"Operation completed successfully. Reservation {entityReservation.id} succesfully saved");
+            }
+            else
+            {
+                // A API Discount retornou um erro, retorne uma resposta de erro
+                return BadRequest("Discount validation failed");
+            }
+
+           
 
         }
 
