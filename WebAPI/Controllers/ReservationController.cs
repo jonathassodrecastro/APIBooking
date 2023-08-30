@@ -1,6 +1,7 @@
 ﻿using APIBooking.Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Polly;
 using Repositories.Interface;
 using System.Text;
 using System.Text.Json;
@@ -18,14 +19,18 @@ namespace WebAPI.Controllers
         private readonly ILogger<ReservationController> _logger;
         private EntityHouse _house;
 
-        public ReservationController(IReservationRepository reservationRepository, IHouseRepository houseRepository, IClientRepository clientRepository, IHttpClientFactory httpClientFactory, EntityHouse house, ILogger<ReservationController> logger)
+        const int maxRetryAttempts = 3;
+        const int retryDelayMilliseconds = 1000;
+        const int timeoutMilliseconds = 5000; // 5 seconds
+
+        public ReservationController(IReservationRepository reservationRepository, IHouseRepository houseRepository, IClientRepository clientRepository, IHttpClientFactory httpClientFactory, ILogger<ReservationController> logger)
         {
             _reservationRepository = reservationRepository;
             _houseRepository = houseRepository;
             _clientRepository = clientRepository;
             _httpClientFactory = httpClientFactory;
             _logger = logger;
-            _house = house;
+            
         }
 
 
@@ -35,9 +40,16 @@ namespace WebAPI.Controllers
         /// <param name="entityReservation">The reservation details to be registered.</param>
         /// <returns>Returns OK if the reservation was successfully registered, or BadRequest if an error occurred.</returns>
         [HttpPost("RegisterReservation")]
-        public async Task<IActionResult> RegisterReservation (EntityReservation entityReservation)
+        public async Task<IActionResult> RegisterReservation(EntityReservation entityReservation)
         {
-            try 
+            var policy = Policy.Handle<Exception>()
+                .WaitAndRetryAsync(maxRetryAttempts, attempt => TimeSpan.FromMilliseconds(retryDelayMilliseconds),
+                    (exception, timeSpan, retryCount, context) =>
+                    {
+                        _logger.LogWarning($"Retrying RegisterReservation after {timeSpan.TotalMilliseconds}ms. Retry attempt: {retryCount}");
+                    });
+
+            try
             {
                 _logger.LogInformation("Starting the RegisterReservation method.");
 
@@ -64,9 +76,10 @@ namespace WebAPI.Controllers
                 }
 
                 _logger.LogInformation("Fetching information for house with ID {HouseId}.", entityReservation.houseId);
-                _house = await _houseRepository.GetById(entityReservation.houseId);
 
-                if (_house == null)
+                var house = await policy.ExecuteAsync(async () => await _houseRepository.GetById(entityReservation.houseId));
+
+                if (house == null)
                 {
                     _logger.LogWarning("House with ID {HouseId} not found.", entityReservation.houseId);
                     return BadRequest($"House with ID {entityReservation.houseId} not found.");
@@ -75,21 +88,13 @@ namespace WebAPI.Controllers
                 entityReservation.startDate = entityReservation.startDate.Date; // Apenas a parte da data, sem a hora
                 entityReservation.endDate = entityReservation.endDate.Date; // Apenas a parte da data, sem a hora
 
-                // Create API Discount request objetct
-                var discountRequest = new
+                var response = await CallDiscountApiAsync(entityReservation, _logger);
+
+                if (response == null)
                 {
-                    userId = entityReservation.clientId.ToString(),
-                    houseId = entityReservation.houseId.ToString(),
-                    discountCode = entityReservation.discountCode
-                };
-
-                //Serialize object
-                var discountRequestBody = JsonSerializer.Serialize(discountRequest);
-
-                // Send request to API Discount
-                var client = _httpClientFactory.CreateClient();
-                var response = await client.PostAsync("https://sbv2bumkomidlxwffpgbh4k6jm0ydskh.lambda-url.us-east-1.on.aws/", new StringContent(discountRequestBody, Encoding.UTF8, "application/json"));
-
+                    _logger.LogWarning("Failed to call the discount API.");
+                    return StatusCode(503, "Failed to call the discount API.");
+                }
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -102,13 +107,14 @@ namespace WebAPI.Controllers
                     _logger.LogWarning("Invalid discount for reservation {ReservationId}.", entityReservation.id);
                     return StatusCode(401, "Invalid discount");
                 }
-            } 
-            catch (Exception ex) 
+            }
+            catch (Exception ex)
             {
                 _logger.LogError(ex, "An error occurred during the execution of the RegisterReservation method.");
-                return StatusCode(500, "An internal error occurred");
-            }  
+                return StatusCode(500, ex.InnerException?.Message ?? "An internal error occurred.");
+            }
         }
+
 
         /// <summary>
         /// Gets a reservation by its ID.
@@ -118,28 +124,36 @@ namespace WebAPI.Controllers
         [HttpGet("GetReservationByID")]
         public async Task<IActionResult> GetReservationByID(int id)
         {
-            try 
+            var policy = Policy.Handle<Exception>()
+                .WaitAndRetryAsync(maxRetryAttempts, attempt => TimeSpan.FromMilliseconds(retryDelayMilliseconds),
+                    (exception, timeSpan, retryCount, context) =>
+                    {
+                        _logger.LogWarning($"Retrying GetReservationByID after {timeSpan.TotalMilliseconds}ms. Retry attempt: {retryCount}");
+                    });
+
+            try
             {
                 _logger.LogInformation($"Starting the GetReservationByID method. Searching for ID: {id}");
-                if (id == 0)
+
+                var result = await policy.ExecuteAsync(async () =>
                 {
-                    _logger.LogWarning("No Id provided.");
-                    return BadRequest("Please fill in the required fields.");
+                    var reservation = await _reservationRepository.GetById(id);
+                    return reservation;
+                });
+
+                if (result == null)
+                {
+                    _logger.LogWarning("Reservation not found.");
+                    return BadRequest("No Reservation found. Id must be valid.");
                 }
 
-                var reservation = await _reservationRepository.GetById(id);
-                if (reservation == null) 
-                {
-                    _logger.LogWarning("Reservation with ID {ReservationId} not found.", id);
-                    return BadRequest("No Reservation found. Id must be valid."); 
-                }
                 _logger.LogInformation("Reservation found.");
-                return Ok($"Reservation {reservation.id} found! - {reservation.clientName}. Start Date: {reservation.startDate}. End Date: {reservation.endDate}. House ID: {reservation.houseId}");
-            } 
+                return Ok($"Reservation {result.id} found! - {result.clientName}. Start Date: {result.startDate}. End Date: {result.endDate}. House ID: {result.houseId}");
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "An error occurred during the execution of the GetReservationByID method.");
-                return StatusCode(500, "An internal error occurred");
+                return StatusCode(500, ex.InnerException?.Message ?? "An internal error occurred.");
             }
         }
 
@@ -150,25 +164,37 @@ namespace WebAPI.Controllers
         [HttpGet("GetAllReservations")]
         public async Task<IActionResult> GetClient()
         {
+
+            var policy = Policy.Handle<Exception>()
+                .WaitAndRetryAsync(maxRetryAttempts, attempt => TimeSpan.FromMilliseconds(retryDelayMilliseconds),
+                    (exception, timeSpan, retryCount, context) =>
+                    {
+                        _logger.LogWarning($"Retrying GetAllReservations after {timeSpan.TotalMilliseconds}ms. Retry attempt: {retryCount}");
+                    });
+
             try
             {
                 _logger.LogInformation("Starting the GetClient method.");
-                var reservations = await _reservationRepository.GetAll();
-                List<EntityReservation> reservationList = reservations.ToList();
 
-                if (!reservationList.Any())
+                var result = await policy.ExecuteAsync(async () =>
+                {
+                    var reservations = await _reservationRepository.GetAll();
+                    return reservations.ToList();
+                });
+
+                if (!result.Any())
                 {
                     _logger.LogWarning("No reservations found in the database.");
                     return NotFound();
                 }
 
                 _logger.LogInformation("Returning a list of reservations.");
-                return Ok(reservationList);
+                return Ok(result);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "An error occurred during the execution of the GetClient method.");
-                return StatusCode(500, "An internal error occurred");
+                return StatusCode(500, ex.InnerException?.Message ?? "An internal error occurred.");
             }
         }
 
@@ -180,18 +206,24 @@ namespace WebAPI.Controllers
         [HttpDelete("DeleteReservation")]
         public async Task<IActionResult> DeleteClientById(int id)
         {
+            var policy = Policy.Handle<Exception>()
+                .WaitAndRetryAsync(maxRetryAttempts, attempt => TimeSpan.FromMilliseconds(retryDelayMilliseconds),
+                    (exception, timeSpan, retryCount, context) =>
+                    {
+                        _logger.LogWarning($"Retrying DeleteClientById after {timeSpan.TotalMilliseconds}ms. Retry attempt: {retryCount}");
+                    });
+
             try
             {
                 _logger.LogInformation($"Starting the DeleteClientById method for reservation with ID: {id}");
 
-                if (id == 0)
+                var result = await policy.ExecuteAsync(async () =>
                 {
-                    _logger.LogWarning("Invalid ID provided in the request.");
-                    return BadRequest("Please fill in the required fields.");
-                }
+                    var reservation = await _reservationRepository.GetById(id);
+                    return reservation;
+                });
 
-                var reservation = await _reservationRepository.GetById(id);
-                if (reservation == null)
+                if (result == null)
                 {
                     _logger.LogWarning($"No reservation found with ID: {id}.");
                     return BadRequest("No Reservation found. Id must be valid.");
@@ -205,7 +237,7 @@ namespace WebAPI.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"An error occurred during the execution of the DeleteClientById method for reservation with ID: {id}");
-                return StatusCode(500, "An internal error occurred");
+                return StatusCode(500, ex.InnerException?.Message ?? "An internal error occurred.");
             }
         }
 
@@ -218,9 +250,22 @@ namespace WebAPI.Controllers
         [HttpPut("UpdateReservation")]
         public async Task<IActionResult> UpdateHouse(int id, EntityHouse entityhouse)
         {
+            var policy = Policy.Handle<Exception>()
+                .WaitAndRetryAsync(maxRetryAttempts, attempt => TimeSpan.FromMilliseconds(retryDelayMilliseconds),
+                    (exception, timeSpan, retryCount, context) =>
+                    {
+                        _logger.LogWarning($"Retrying UpdateHouse after {timeSpan.TotalMilliseconds}ms. Retry attempt: {retryCount}");
+                    });
+
             try
             {
                 _logger.LogInformation($"Starting the UpdateHouse method for House ID {id}.");
+
+                var result = await policy.ExecuteAsync(async () =>
+                {
+                    var house = await _houseRepository.GetById(id);
+                    return house;
+                });
 
                 if (entityhouse == null)
                 {
@@ -241,9 +286,60 @@ namespace WebAPI.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "An error occurred while processing the UpdateHouse method.");
-                return StatusCode(500, "An error occurred while processing the request.");
+                return StatusCode(500, ex.InnerException?.Message ?? "An internal error occurred.");
             }
         }
+
+        private async Task<HttpResponseMessage> CallDiscountApiAsync(EntityReservation entityReservation, ILogger logger)
+        {
+            var policy = Policy.Handle<HttpRequestException>()
+                .WaitAndRetryAsync(maxRetryAttempts, attempt => TimeSpan.FromMilliseconds(retryDelayMilliseconds),
+                    (exception, timeSpan, retryCount, context) =>
+                    {
+                        logger.LogWarning($"Retrying API call after {timeSpan.TotalMilliseconds}ms. Retry attempt: {retryCount}");
+                    });
+
+            HttpResponseMessage response = null;
+
+            await policy.ExecuteAsync(async () =>
+            {
+                // Create API Discount request object
+                var discountRequest = new
+                {
+                    userId = entityReservation.clientId.ToString(),
+                    houseId = entityReservation.houseId.ToString(),
+                    discountCode = entityReservation.discountCode
+                };
+
+                // Serialize object
+                var discountRequestBody = JsonSerializer.Serialize(discountRequest);
+
+                // Set up timeout
+                using var timeoutCts = new CancellationTokenSource();
+                timeoutCts.CancelAfter(timeoutMilliseconds);
+
+                // Send request to API Discount
+                var client = _httpClientFactory.CreateClient();
+                try
+                {
+                    response = await client.PostAsync("https://sbv2bumkomidlxwffpgbh4k6jm0ydskh.lambda-url.us-east-1.on.aws/",
+                        new StringContent(discountRequestBody, Encoding.UTF8, "application/json"), timeoutCts.Token);
+                }
+                catch (TaskCanceledException ex)
+                {
+                    logger.LogWarning($"API call timed out after {timeoutMilliseconds}ms.");
+                }
+                catch (HttpRequestException ex)
+                {
+                    logger.LogError($"API call failed with exception: {ex}");
+                }
+            });
+
+            return response;
+        }
+
+
+
 
     }
 }

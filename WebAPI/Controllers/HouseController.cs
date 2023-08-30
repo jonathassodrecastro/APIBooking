@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Repositories.Interface;
+using Polly;
 
 namespace WebAPI.Controllers
 {
@@ -11,6 +12,11 @@ namespace WebAPI.Controllers
     {
         private readonly ILogger<HouseController> _logger;
         private readonly IHouseRepository _houseRepository;
+        
+        const int maxRetryAttempts = 3;
+        const int retryDelayMilliseconds = 1000;
+        const int timeoutMilliseconds = 5000; // 5 seconds
+        
         public HouseController(IHouseRepository houseRepository, ILogger<HouseController> logger)
         {
             _houseRepository = houseRepository;
@@ -25,6 +31,12 @@ namespace WebAPI.Controllers
         [HttpPost("RegisterHouse")]
         public IActionResult RegisterHouse(EntityHouse entityhouse)
         {
+            var policy = Policy.Handle<Exception>()
+                .WaitAndRetryAsync(maxRetryAttempts, attempt => TimeSpan.FromMilliseconds(retryDelayMilliseconds),
+                    (exception, timeSpan, retryCount, context) =>
+                    {
+                        _logger.LogWarning($"Retrying RegisterReservation after {timeSpan.TotalMilliseconds}ms. Retry attempt: {retryCount}");
+                    });
             try
             {
                 _logger.LogInformation("Starting the RegisterHouse method.");
@@ -78,6 +90,12 @@ namespace WebAPI.Controllers
         [HttpGet("GetHouseById")]
         public async Task<IActionResult> GetHouseById(int id)
         {
+            var policy = Policy.Handle<Exception>()
+                .WaitAndRetryAsync(maxRetryAttempts, attempt => TimeSpan.FromMilliseconds(retryDelayMilliseconds),
+                    (exception, timeSpan, retryCount, context) =>
+                    {
+                        _logger.LogWarning($"Retrying RegisterReservation after {timeSpan.TotalMilliseconds}ms. Retry attempt: {retryCount}");
+                    });
             try
             {
                 _logger.LogInformation("Starting the GetHouseById method.");
@@ -117,6 +135,13 @@ namespace WebAPI.Controllers
         [HttpGet("GetAllHouses")]
         public async Task<IActionResult> GetHouses()
         {
+            var policy = Policy.Handle<Exception>()
+                .WaitAndRetryAsync(maxRetryAttempts, attempt => TimeSpan.FromMilliseconds(retryDelayMilliseconds),
+                    (exception, timeSpan, retryCount, context) =>
+                    {
+                        _logger.LogWarning($"Retrying RegisterReservation after {timeSpan.TotalMilliseconds}ms. Retry attempt: {retryCount}");
+                    });
+
             try
             {
                 _logger.LogInformation("Starting the GetHouses method.");
@@ -160,6 +185,13 @@ namespace WebAPI.Controllers
         [HttpDelete("DeleteHouse")]
         public async Task<IActionResult> DeleteHouseById(int id)
         {
+            var policy = Policy.Handle<Exception>()
+                .WaitAndRetryAsync(maxRetryAttempts, attempt => TimeSpan.FromMilliseconds(retryDelayMilliseconds),
+                    (exception, timeSpan, retryCount, context) =>
+                    {
+                        _logger.LogWarning($"Retrying RegisterReservation after {timeSpan.TotalMilliseconds}ms. Retry attempt: {retryCount}");
+                    });
+
             try
             {
                 _logger.LogInformation($"Starting the DeleteHouseById method for House ID {id}.");
@@ -199,6 +231,13 @@ namespace WebAPI.Controllers
         [HttpPut("UpdateHouse")]
         public async Task<IActionResult> UpdateHouse(int id, EntityHouse entityhouse)
         {
+            var policy = Policy.Handle<Exception>()
+                .WaitAndRetryAsync(maxRetryAttempts, attempt => TimeSpan.FromMilliseconds(retryDelayMilliseconds),
+                    (exception, timeSpan, retryCount, context) =>
+                    {
+                        _logger.LogWarning($"Retrying RegisterReservation after {timeSpan.TotalMilliseconds}ms. Retry attempt: {retryCount}");
+                    });
+
             try
             {
                 _logger.LogInformation($"Starting the UpdateHouse method for House ID {id}.");

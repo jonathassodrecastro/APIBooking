@@ -1,6 +1,7 @@
 ﻿using APIBooking.Domain.Entities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Polly;
 using Repositories.Interface;
 
 namespace WebAPI.Controllers
@@ -11,6 +12,11 @@ namespace WebAPI.Controllers
     {
         private readonly ILogger<ClientController> _logger;
         private readonly IClientRepository _clientRepository;
+
+        const int maxRetryAttempts = 3;
+        const int retryDelayMilliseconds = 1000;
+        const int timeoutMilliseconds = 5000; // 5 seconds
+
         public ClientController(IClientRepository clientRepository, ILogger<ClientController> logger)
         {
             _clientRepository = clientRepository;
@@ -25,6 +31,13 @@ namespace WebAPI.Controllers
         [HttpPost("RegisterClient")]
         public async Task<IActionResult> Register(EntityClient entityClient)
         {
+            var policy = Policy.Handle<Exception>()
+                .WaitAndRetryAsync(maxRetryAttempts, attempt => TimeSpan.FromMilliseconds(retryDelayMilliseconds),
+                    (exception, timeSpan, retryCount, context) =>
+                    {
+                        _logger.LogWarning($"Retrying RegisterReservation after {timeSpan.TotalMilliseconds}ms. Retry attempt: {retryCount}");
+                    });
+
             try
             {
                 _logger.LogInformation("Starting the Register method for a new client.");
@@ -67,7 +80,7 @@ namespace WebAPI.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "An error occurred during the execution of the Register method.");
-                return StatusCode(500, "An internal error occurred");
+                return StatusCode(500, ex.InnerException?.Message ?? "An internal error occurred.");
             }
         }
 
@@ -80,6 +93,13 @@ namespace WebAPI.Controllers
         [HttpGet("GetClientById")]
         public async Task<IActionResult> GetClientById(int id)
         {
+            var policy = Policy.Handle<Exception>()
+                .WaitAndRetryAsync(maxRetryAttempts, attempt => TimeSpan.FromMilliseconds(retryDelayMilliseconds),
+                    (exception, timeSpan, retryCount, context) =>
+                    {
+                        _logger.LogWarning($"Retrying GetReservationByID after {timeSpan.TotalMilliseconds}ms. Retry attempt: {retryCount}");
+                    });
+
             try
             {
                 _logger.LogInformation($"Starting the GetClientById method for client ID: {id}");
@@ -104,7 +124,7 @@ namespace WebAPI.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "An error occurred during the execution of the GetClientById method.");
-                return StatusCode(500, "An internal error occurred");
+                return StatusCode(500, ex.InnerException?.Message ?? "An internal error occurred.");
             }
         }
 
@@ -116,6 +136,13 @@ namespace WebAPI.Controllers
         [HttpGet("GetAllClients")]
         public async Task<IActionResult> GetClient()
         {
+            var policy = Policy.Handle<Exception>()
+                .WaitAndRetryAsync(maxRetryAttempts, attempt => TimeSpan.FromMilliseconds(retryDelayMilliseconds),
+                    (exception, timeSpan, retryCount, context) =>
+                    {
+                        _logger.LogWarning($"Retrying GetReservationByID after {timeSpan.TotalMilliseconds}ms. Retry attempt: {retryCount}");
+                    });
+
             try
             {
                 _logger.LogInformation("Starting the GetClient method.");
@@ -128,7 +155,7 @@ namespace WebAPI.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "An error occurred during the execution of the GetClient method.");
-                return StatusCode(500, "An internal error occurred");
+                return StatusCode(500, ex.InnerException?.Message ?? "An internal error occurred.");
             }
         }
 
@@ -141,6 +168,13 @@ namespace WebAPI.Controllers
         [HttpDelete("DeleteClient")]
         public async Task<IActionResult> DeleteClientById(int id) 
         {
+            var policy = Policy.Handle<Exception>()
+                .WaitAndRetryAsync(maxRetryAttempts, attempt => TimeSpan.FromMilliseconds(retryDelayMilliseconds),
+                    (exception, timeSpan, retryCount, context) =>
+                    {
+                        _logger.LogWarning($"Retrying GetReservationByID after {timeSpan.TotalMilliseconds}ms. Retry attempt: {retryCount}");
+                    });
+
             try
             {
                 _logger.LogInformation($"Starting the DeleteClientById method for client with ID {id}.");
@@ -168,7 +202,7 @@ namespace WebAPI.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "An error occurred during the execution of the DeleteClientById method.");
-                return StatusCode(500, "An internal error occurred");
+                return StatusCode(500, ex.InnerException?.Message ?? "An internal error occurred.");
             }
         }
 
@@ -181,6 +215,13 @@ namespace WebAPI.Controllers
         [HttpPut("UpdateClient")]
         public async Task<IActionResult> UpdateClient(int id, EntityClient entityClient)
         {
+            var policy = Policy.Handle<Exception>()
+                .WaitAndRetryAsync(maxRetryAttempts, attempt => TimeSpan.FromMilliseconds(retryDelayMilliseconds),
+                    (exception, timeSpan, retryCount, context) =>
+                    {
+                        _logger.LogWarning($"Retrying GetReservationByID after {timeSpan.TotalMilliseconds}ms. Retry attempt: {retryCount}");
+                    });
+
             try
             {
                 _logger.LogInformation($"Starting the UpdateClient method for client with ID {id}.");
@@ -206,7 +247,7 @@ namespace WebAPI.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "An error occurred during the execution of the UpdateClient method.");
-                return StatusCode(500, "An internal error occurred");
+                return StatusCode(500, ex.InnerException?.Message ?? "An internal error occurred.");
             }
         }
 
