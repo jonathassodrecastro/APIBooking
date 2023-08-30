@@ -89,7 +89,7 @@ namespace WebAPI.Controllers
             else
             {
                 // A API Discount retornou um erro, retorne uma resposta de erro
-                return BadRequest("Discount validation failed");
+                return BadRequest("Invalid Discount");
             }
 
            
