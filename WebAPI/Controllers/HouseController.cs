@@ -15,6 +15,11 @@ namespace WebAPI.Controllers
             _houseRepository = houseRepository;
         }
 
+        /// <summary>
+        /// Registers a new house in the system.
+        /// </summary>
+        /// <param name="house">The details of the house to be registered.</param>
+        /// <returns>The registered house information.</returns>
         [HttpPost("RegisterHouse")]
         public IActionResult RegisterHouse(EntityHouse entityhouse)
         {
@@ -47,6 +52,11 @@ namespace WebAPI.Controllers
             return Ok($"Operation completed successfully. House {entityhouse.id} succesfully saved");
         }
 
+        /// <summary>
+        /// Retrieves information about a specific house by its ID.
+        /// </summary>
+        /// <param name="houseId">The ID of the house to retrieve.</param>
+        /// <returns>The house information.</returns>
         [HttpGet("FindHouse")]
         public async Task<IActionResult> GetHouseById(int id)
         {
@@ -67,6 +77,10 @@ namespace WebAPI.Controllers
             return Ok($"House Found! - {house.id}: {availability}!");
         }
 
+        /// <summary>
+        /// Retrieves a list of all available houses.
+        /// </summary>
+        /// <returns>A list of house information.</returns>
         [HttpGet("GetAllHouses")]
         public async Task<IActionResult> GetHouses()
          {
@@ -91,8 +105,12 @@ namespace WebAPI.Controllers
 
             return Ok(responseList);
         }
-        
 
+        /// <summary>
+        /// Deletes a house by its ID.
+        /// </summary>
+        /// <param name="houseId">The ID of the house to be deleted.</param>
+        /// <returns>A status message indicating the result of the deletion.</returns>
         [HttpDelete("DeleteHouse")]
         public async Task<IActionResult> DeleteHouseById(int id)
         {
@@ -113,6 +131,12 @@ namespace WebAPI.Controllers
             return Ok("House Deleted!");
         }
 
+        /// <summary>
+        /// Updates information for a specific house.
+        /// </summary>
+        /// <param name="houseId">The ID of the house to be updated.</param>
+        /// <param name="updatedHouse">The updated information for the house.</param>
+        /// <returns>The updated house information.</returns>
         [HttpPut("UpdateHouse")]
         public async Task<IActionResult> UpdateHouse(int id, EntityHouse entityhouse)
         {

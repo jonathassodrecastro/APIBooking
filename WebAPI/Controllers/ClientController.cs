@@ -15,6 +15,11 @@ namespace WebAPI.Controllers
             _clientRepository = clientRepository;
         }
 
+        /// <summary>
+        /// Registers a new client.
+        /// </summary>
+        /// <param name="newClient">The client information to be registered.</param>
+        /// <returns>The registered client.</returns>
         [HttpPost("RegisterClient")]
         public IActionResult Register(EntityClient entityClient)
         {
@@ -46,6 +51,11 @@ namespace WebAPI.Controllers
             return Ok($"Operation completed successfully. Client {entityClient.id} succesfully saved");
         }
 
+        /// <summary>
+        /// Retrieves a client by its ID.
+        /// </summary>
+        /// <param name="id">The ID of the client to retrieve.</param>
+        /// <returns>The client with the specified ID.</returns>
         [HttpGet("FindClient")] 
         public async Task<IActionResult> GetClientById(int id)
         {
@@ -64,6 +74,10 @@ namespace WebAPI.Controllers
             return Ok($"Client Found! - {client.id}: {client.name}");
         }
 
+        /// <summary>
+        /// Retrieves a list of all clients.
+        /// </summary>
+        /// <returns>A list of clients.</returns>
         [HttpGet("GetAllClients")]
         public async Task<IActionResult> GetClient()
         {
@@ -74,6 +88,11 @@ namespace WebAPI.Controllers
             return Ok(clientList);
         }
 
+        /// <summary>
+        /// Deletes a client by their ID.
+        /// </summary>
+        /// <param name="clientId">The ID of the client to be deleted.</param>
+        /// <returns>A status message indicating the result of the deletion.</returns>
         [HttpDelete("DeleteClient")]
         public async Task<IActionResult> DeleteClientById(int id) 
         {
@@ -94,6 +113,12 @@ namespace WebAPI.Controllers
             return Ok("Client Deleted!");
         }
 
+        /// <summary>
+        /// Updates the information of a client.
+        /// </summary>
+        /// <param name="id">The ID of the client to update.</param>
+        /// <param name="updatedClient">The updated client information.</param>
+        /// <returns>The updated client.</returns>
         [HttpPut("UpdateClient")]
         public async Task<IActionResult> UpdateClient(int id, EntityClient entityClient)
         {
