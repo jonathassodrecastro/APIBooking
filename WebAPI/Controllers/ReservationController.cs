@@ -25,7 +25,11 @@ namespace WebAPI.Controllers
         }
 
 
-
+        /// <summary>
+        /// Registers a new reservation.
+        /// </summary>
+        /// <param name="entityReservation">The reservation details to be registered.</param>
+        /// <returns>Returns OK if the reservation was successfully registered, or BadRequest if an error occurred.</returns>
         [HttpPost("RegisterReservation")]
         public async Task<IActionResult> RegisterReservation (EntityReservation entityReservation)
         {
@@ -67,6 +71,11 @@ namespace WebAPI.Controllers
 
         }
 
+        /// <summary>
+        /// Finds a reservation by its ID.
+        /// </summary>
+        /// <param name="reservationId">The ID of the reservation to retrieve.</param>
+        /// <returns>Returns the reservation if found, or NotFound if the reservation does not exist.</returns>
         [HttpGet("FindReservationByID")]
         public async Task<IActionResult> GetReservationByID(int id)
         {
@@ -81,6 +90,10 @@ namespace WebAPI.Controllers
             return Ok($"Reservation {reservation.id} found! - {reservation.clientName}. Start Date: {reservation.startDate}. End Date: {reservation.endDate}. House ID: {reservation.houseId}");
         }
 
+        /// <summary>
+        /// Retrieves all reservations.
+        /// </summary>
+        /// <returns>Returns a list of all reservations.</returns>
         [HttpGet("GetAllReservations")]
         public async Task<IActionResult> GetClient()
         {
@@ -88,9 +101,19 @@ namespace WebAPI.Controllers
 
             List<EntityReservation> reservationList = reservations.ToList();
 
+            if (!reservationList.Any())
+            {
+                return NotFound();
+            }
+
             return Ok(reservationList);
         }
 
+        /// <summary>
+        /// Deletes a reservation based on the provided reservation ID.
+        /// </summary>
+        /// <param name="reservationId">The ID of the reservation to be deleted.</param>
+        /// <returns>Returns OK if the reservation was successfully deleted, NotFound if the reservation was not found, or BadRequest if an error occurred.</returns>
         [HttpDelete("DeleteReservation")]
         public async Task<IActionResult> DeleteClientById(int id)
         {
@@ -111,6 +134,12 @@ namespace WebAPI.Controllers
             return Ok("Reservation Deleted!");
         }
 
+        /// <summary>
+        /// Updates the information of an existing reservation.
+        /// </summary>
+        /// <param name="reservationId">The ID of the reservation to be updated.</param>
+        /// <param name="updatedReservation">The updated reservation data.</param>
+        /// <returns>Returns OK if the reservation was successfully updated, NotFound if the reservation was not found, or BadRequest if an error occurred.</returns>
         [HttpPut("UpdateReservation")]
         public async Task<IActionResult> UpdateClient(int id, EntityReservation entityReservation)
         {
