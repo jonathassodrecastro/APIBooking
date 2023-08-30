@@ -30,7 +30,7 @@ namespace WebAPI.Controllers
             _clientRepository = clientRepository;
             _httpClientFactory = httpClientFactory;
             _logger = logger;
-            
+
         }
 
 
@@ -337,9 +337,5 @@ namespace WebAPI.Controllers
 
             return response;
         }
-
-
-
-
     }
 }

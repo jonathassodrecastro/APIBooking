@@ -166,7 +166,7 @@ namespace WebAPI.Controllers
         /// <param name="clientId">The ID of the client to be deleted.</param>
         /// <returns>A status message indicating the result of the deletion.</returns>
         [HttpDelete("DeleteClient")]
-        public async Task<IActionResult> DeleteClientById(int id) 
+        public async Task<IActionResult> DeleteClientById(int id)
         {
             var policy = Policy.Handle<Exception>()
                 .WaitAndRetryAsync(maxRetryAttempts, attempt => TimeSpan.FromMilliseconds(retryDelayMilliseconds),

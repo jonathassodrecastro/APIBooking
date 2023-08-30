@@ -12,11 +12,11 @@ namespace WebAPI.Controllers
     {
         private readonly ILogger<HouseController> _logger;
         private readonly IHouseRepository _houseRepository;
-        
+
         const int maxRetryAttempts = 3;
         const int retryDelayMilliseconds = 1000;
         const int timeoutMilliseconds = 5000; // 5 seconds
-        
+
         public HouseController(IHouseRepository houseRepository, ILogger<HouseController> logger)
         {
             _houseRepository = houseRepository;

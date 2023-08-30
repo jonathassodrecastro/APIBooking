@@ -16,7 +16,7 @@ namespace APIBooking.Data.DataConfig
                 .HasColumnType("smallint")
                 .IsRequired();
 
-           
+
         }
     }
 }
