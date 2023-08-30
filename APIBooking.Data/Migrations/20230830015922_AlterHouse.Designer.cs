@@ -3,6 +3,7 @@ using System;
 using APIBooking.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace APIBooking.Data.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20230830015922_AlterHouse")]
+    partial class AlterHouse
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -58,8 +61,8 @@ namespace APIBooking.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("id"));
 
-                    b.Property<short>("available")
-                        .HasColumnType("smallint");
+                    b.Property<int>("available")
+                        .HasColumnType("int");
 
                     b.HasKey("id");
 
@@ -99,8 +102,8 @@ namespace APIBooking.Data.Migrations
                     b.Property<DateTime>("endDate")
                         .HasColumnType("DATE");
 
-                    b.Property<int>("houseId")
-                        .HasColumnType("int");
+                    b.Property<short>("houseId")
+                        .HasColumnType("smallint");
 
                     b.Property<DateTime>("startDate")
                         .HasColumnType("DATE");

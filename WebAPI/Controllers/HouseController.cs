@@ -16,7 +16,7 @@ namespace WebAPI.Controllers
         }
 
         [HttpPost("RegisterHouse")]
-        public IActionResult Register(EntityHouse entityhouse)
+        public IActionResult RegisterHouse(EntityHouse entityhouse)
         {
             if (entityhouse == null)
             {
@@ -27,9 +27,6 @@ namespace WebAPI.Controllers
             {
                 string.IsNullOrWhiteSpace(entityhouse.id.ToString()) ? "House ID" : null,
                 string.IsNullOrWhiteSpace(entityhouse.available.ToString()) ? "Availability" : null,
-                
-
-
             }
                 .Where(fieldName => fieldName != null)
                 .ToList();
@@ -62,7 +59,7 @@ namespace WebAPI.Controllers
 
             if (house == null)
             {
-                return BadRequest("No Client found. Id must be valid.");
+                return BadRequest("No House found. Id must be valid.");
             }
 
             string availability = (house.available == 0) ? "Available" : "Not available";

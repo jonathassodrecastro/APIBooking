@@ -3,6 +3,7 @@ using System;
 using APIBooking.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace APIBooking.Data.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20230830011521_AlterReservation")]
+    partial class AlterReservation
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -96,13 +99,13 @@ namespace APIBooking.Data.Migrations
                         .IsRequired()
                         .HasColumnType("varchar(10)");
 
-                    b.Property<DateTime>("endDate")
+                    b.Property<DateOnly>("endDate")
                         .HasColumnType("DATE");
 
-                    b.Property<int>("houseId")
-                        .HasColumnType("int");
+                    b.Property<short>("houseId")
+                        .HasColumnType("smallint");
 
-                    b.Property<DateTime>("startDate")
+                    b.Property<DateOnly>("startDate")
                         .HasColumnType("DATE");
 
                     b.HasKey("id");

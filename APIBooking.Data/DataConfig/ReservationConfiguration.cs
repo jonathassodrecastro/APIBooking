@@ -18,7 +18,7 @@ namespace APIBooking.Data.DataConfig
             builder.Property(k => k.id).ValueGeneratedOnAdd();
 
             builder.Property(x => x.clientId)
-                .HasColumnType("smallint")
+                .HasColumnType("int")
                 .IsRequired();
 
             builder.Property(x => x.clientName)
@@ -38,15 +38,15 @@ namespace APIBooking.Data.DataConfig
                .IsRequired();
 
             builder.Property(x => x.startDate)
-               .HasColumnType("date")
+               .HasColumnType("DATE")
                .IsRequired();
 
             builder.Property(x => x.endDate)
-               .HasColumnType("date")
+               .HasColumnType("DATE")
                .IsRequired();
 
             builder.Property(x => x.houseId)
-               .HasColumnType("smallint")
+               .HasColumnType("int")
                .IsRequired();
 
             builder.Property(x => x.discountCode)
