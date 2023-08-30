@@ -1,5 +1,6 @@
 ﻿using APIBooking.Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Repositories.Interface;
 using System.Text;
 using System.Text.Json;
@@ -14,14 +15,17 @@ namespace WebAPI.Controllers
         private readonly IHouseRepository _houseRepository;
         private readonly IClientRepository _clientRepository;
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly ILogger<ReservationController> _logger;
         private EntityHouse _house;
 
-        public ReservationController(IReservationRepository reservationRepository, IHouseRepository houseRepository, IClientRepository clientRepository, IHttpClientFactory httpClientFactory)
+        public ReservationController(IReservationRepository reservationRepository, IHouseRepository houseRepository, IClientRepository clientRepository, IHttpClientFactory httpClientFactory, EntityHouse house, ILogger<ReservationController> logger)
         {
             _reservationRepository = reservationRepository;
             _houseRepository = houseRepository;
             _clientRepository = clientRepository;
             _httpClientFactory = httpClientFactory;
+            _logger = logger;
+            _house = house;
         }
 
 
@@ -33,86 +37,110 @@ namespace WebAPI.Controllers
         [HttpPost("RegisterReservation")]
         public async Task<IActionResult> RegisterReservation (EntityReservation entityReservation)
         {
-            var missingFields = new List<string>
+            try 
             {
-                string.IsNullOrWhiteSpace(entityReservation.clientId.ToString()) ? "Client ID" : null,
-                string.IsNullOrWhiteSpace(entityReservation.clientName.ToString()) ? "Client Name" : null,
-                string.IsNullOrWhiteSpace(entityReservation.clientLastname.ToString()) ? "Client Last Name" : null,
-                string.IsNullOrWhiteSpace(entityReservation.clientAge.ToString()) ? "Client Age" : null,
-                string.IsNullOrWhiteSpace(entityReservation.clientPhoneNumber.ToString()) ? "Client Phone Number" : null,
-                string.IsNullOrWhiteSpace(entityReservation.startDate.ToString()) ? "Start Date" : null,
-                string.IsNullOrWhiteSpace(entityReservation.endDate.ToString()) ? "End Date" : null,
-                string.IsNullOrWhiteSpace(entityReservation.houseId.ToString()) ? "House ID" : null,
-                string.IsNullOrWhiteSpace(entityReservation.discountCode.ToString()) ? "Discount Code" : null,
-            }
+                _logger.LogInformation("Starting the RegisterReservation method.");
+
+                var missingFields = new List<string>
+                {
+                    string.IsNullOrWhiteSpace(entityReservation.clientId.ToString()) ? "Client ID" : null,
+                    string.IsNullOrWhiteSpace(entityReservation.clientName.ToString()) ? "Client Name" : null,
+                    string.IsNullOrWhiteSpace(entityReservation.clientLastname.ToString()) ? "Client Last Name" : null,
+                    string.IsNullOrWhiteSpace(entityReservation.clientAge.ToString()) ? "Client Age" : null,
+                    string.IsNullOrWhiteSpace(entityReservation.clientPhoneNumber.ToString()) ? "Client Phone Number" : null,
+                    string.IsNullOrWhiteSpace(entityReservation.startDate.ToString()) ? "Start Date" : null,
+                    string.IsNullOrWhiteSpace(entityReservation.endDate.ToString()) ? "End Date" : null,
+                    string.IsNullOrWhiteSpace(entityReservation.houseId.ToString()) ? "House ID" : null,
+                    string.IsNullOrWhiteSpace(entityReservation.discountCode.ToString()) ? "Discount Code" : null,
+                }
                 .Where(fieldName => fieldName != null)
                 .ToList();
 
-            if (missingFields.Any())
+                if (missingFields.Any())
+                {
+                    var errorMessage = "Required fields not filled: " + string.Join(", ", missingFields);
+                    _logger.LogWarning(errorMessage);
+                    return BadRequest(errorMessage);
+                }
+
+                _logger.LogInformation("Fetching information for house with ID {HouseId}.", entityReservation.houseId);
+                _house = await _houseRepository.GetById(entityReservation.houseId);
+
+                if (_house == null)
+                {
+                    _logger.LogWarning("House with ID {HouseId} not found.", entityReservation.houseId);
+                    return BadRequest($"House with ID {entityReservation.houseId} not found.");
+                }
+
+                entityReservation.startDate = entityReservation.startDate.Date; // Apenas a parte da data, sem a hora
+                entityReservation.endDate = entityReservation.endDate.Date; // Apenas a parte da data, sem a hora
+
+                // Create API Discount request objetct
+                var discountRequest = new
+                {
+                    userId = entityReservation.clientId.ToString(),
+                    houseId = entityReservation.houseId.ToString(),
+                    discountCode = entityReservation.discountCode
+                };
+
+                //Serialize object
+                var discountRequestBody = JsonSerializer.Serialize(discountRequest);
+
+                // Send request to API Discount
+                var client = _httpClientFactory.CreateClient();
+                var response = await client.PostAsync("https://sbv2bumkomidlxwffpgbh4k6jm0ydskh.lambda-url.us-east-1.on.aws/", new StringContent(discountRequestBody, Encoding.UTF8, "application/json"));
+
+
+                if (response.IsSuccessStatusCode)
+                {
+                    await _reservationRepository.Insert(entityReservation);
+                    _logger.LogInformation("Reservation {ReservationId} successfully saved.", entityReservation.id);
+                    return Ok($"Operation completed successfully. Reservation {entityReservation.id} saved successfully");
+                }
+                else
+                {
+                    _logger.LogWarning("Invalid discount for reservation {ReservationId}.", entityReservation.id);
+                    return StatusCode(401, "Invalid discount");
+                }
+            } 
+            catch (Exception ex) 
             {
-                var errorMessage = "Required fields not filled: " + string.Join(", ", missingFields);
-                return BadRequest(errorMessage);
-            }
-
-            _house = await _houseRepository.GetById(entityReservation.houseId);
-
-            if (_house == null)
-            {
-                return BadRequest($"House with ID {entityReservation.houseId} not found.");
-            }
-
-            entityReservation.startDate = entityReservation.startDate.Date; // Apenas a parte da data, sem a hora
-            entityReservation.endDate = entityReservation.endDate.Date; // Apenas a parte da data, sem a hora
-
-            // Create API Discount request objetct
-            var discountRequest = new
-            {
-                userId = entityReservation.clientId.ToString(),
-                houseId = entityReservation.houseId.ToString(),
-                discountCode = entityReservation.discountCode
-            };
-
-            //Serialize object
-            var discountRequestBody = JsonSerializer.Serialize(discountRequest);
-
-            // Send request to API Discount
-            var client = _httpClientFactory.CreateClient();
-            var response = await client.PostAsync("https://sbv2bumkomidlxwffpgbh4k6jm0ydskh.lambda-url.us-east-1.on.aws/", new StringContent(discountRequestBody, Encoding.UTF8, "application/json"));
-
-            // Verificar a resposta da API Discount
-            if (response.IsSuccessStatusCode)
-            {
-                // A API Discount retornou com sucesso, continue com a lógica de reserva
-                await _reservationRepository.Insert(entityReservation);
-                return Ok($"Operation completed successfully. Reservation {entityReservation.id} succesfully saved");
-            }
-            else
-            {
-                // A API Discount retornou um erro, retorne uma resposta de erro
-                return BadRequest("Invalid Discount");
-            }
-
-           
-
+                _logger.LogError(ex, "An error occurred during the execution of the RegisterReservation method.");
+                return StatusCode(500, "An internal error occurred");
+            }  
         }
 
         /// <summary>
-        /// Finds a reservation by its ID.
+        /// Gets a reservation by its ID.
         /// </summary>
         /// <param name="reservationId">The ID of the reservation to retrieve.</param>
         /// <returns>Returns the reservation if found, or NotFound if the reservation does not exist.</returns>
-        [HttpGet("FindReservationByID")]
+        [HttpGet("GetReservationByID")]
         public async Task<IActionResult> GetReservationByID(int id)
         {
-            if (id == 0)
+            try 
             {
-                return BadRequest("Please fill in the required fields.");
+                _logger.LogInformation($"Starting the GetReservationByID method. Searching for ID: {id}");
+                if (id == 0)
+                {
+                    _logger.LogWarning("No Id provided.");
+                    return BadRequest("Please fill in the required fields.");
+                }
+
+                var reservation = await _reservationRepository.GetById(id);
+                if (reservation == null) 
+                {
+                    _logger.LogWarning("Reservation with ID {ReservationId} not found.", id);
+                    return BadRequest("No Reservation found. Id must be valid."); 
+                }
+                _logger.LogInformation("Reservation found.");
+                return Ok($"Reservation {reservation.id} found! - {reservation.clientName}. Start Date: {reservation.startDate}. End Date: {reservation.endDate}. House ID: {reservation.houseId}");
+            } 
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred during the execution of the GetReservationByID method.");
+                return StatusCode(500, "An internal error occurred");
             }
-
-            var reservation = await _reservationRepository.GetById(id);
-            if (reservation == null) { return BadRequest("No Reservation found. Id must be valid."); }
-
-            return Ok($"Reservation {reservation.id} found! - {reservation.clientName}. Start Date: {reservation.startDate}. End Date: {reservation.endDate}. House ID: {reservation.houseId}");
         }
 
         /// <summary>
@@ -122,16 +150,26 @@ namespace WebAPI.Controllers
         [HttpGet("GetAllReservations")]
         public async Task<IActionResult> GetClient()
         {
-            var reservations = await _reservationRepository.GetAll();
-
-            List<EntityReservation> reservationList = reservations.ToList();
-
-            if (!reservationList.Any())
+            try
             {
-                return NotFound();
-            }
+                _logger.LogInformation("Starting the GetClient method.");
+                var reservations = await _reservationRepository.GetAll();
+                List<EntityReservation> reservationList = reservations.ToList();
 
-            return Ok(reservationList);
+                if (!reservationList.Any())
+                {
+                    _logger.LogWarning("No reservations found in the database.");
+                    return NotFound();
+                }
+
+                _logger.LogInformation("Returning a list of reservations.");
+                return Ok(reservationList);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred during the execution of the GetClient method.");
+                return StatusCode(500, "An internal error occurred");
+            }
         }
 
         /// <summary>
@@ -142,21 +180,33 @@ namespace WebAPI.Controllers
         [HttpDelete("DeleteReservation")]
         public async Task<IActionResult> DeleteClientById(int id)
         {
-            if (id == 0)
+            try
             {
-                return BadRequest("Please fill in the required fields.");
+                _logger.LogInformation($"Starting the DeleteClientById method for reservation with ID: {id}");
+
+                if (id == 0)
+                {
+                    _logger.LogWarning("Invalid ID provided in the request.");
+                    return BadRequest("Please fill in the required fields.");
+                }
+
+                var reservation = await _reservationRepository.GetById(id);
+                if (reservation == null)
+                {
+                    _logger.LogWarning($"No reservation found with ID: {id}.");
+                    return BadRequest("No Reservation found. Id must be valid.");
+                }
+
+                await _reservationRepository.Delete(id);
+
+                _logger.LogInformation($"Reservation with ID: {id} deleted successfully.");
+                return Ok("Reservation Deleted!");
             }
-
-            var reservation = await _reservationRepository.GetById(id);
-
-            if (reservation == null)
+            catch (Exception ex)
             {
-                return BadRequest("No Reservation found. Id must be valid.");
+                _logger.LogError(ex, $"An error occurred during the execution of the DeleteClientById method for reservation with ID: {id}");
+                return StatusCode(500, "An internal error occurred");
             }
-
-            await _reservationRepository.Delete(id);
-
-            return Ok("Reservation Deleted!");
         }
 
         /// <summary>
@@ -166,20 +216,34 @@ namespace WebAPI.Controllers
         /// <param name="updatedReservation">The updated reservation data.</param>
         /// <returns>Returns OK if the reservation was successfully updated, NotFound if the reservation was not found, or BadRequest if an error occurred.</returns>
         [HttpPut("UpdateReservation")]
-        public async Task<IActionResult> UpdateClient(int id, EntityReservation entityReservation)
+        public async Task<IActionResult> UpdateHouse(int id, EntityHouse entityhouse)
         {
-            if (entityReservation == null)
+            try
             {
-                return BadRequest("Reservation not found");
-            }
+                _logger.LogInformation($"Starting the UpdateHouse method for House ID {id}.");
 
-            if (id != entityReservation.id)
+                if (entityhouse == null)
+                {
+                    return BadRequest("House not found");
+                }
+
+                if (id != entityhouse.id)
+                {
+                    return BadRequest("Wrong house informed");
+                }
+
+                await _houseRepository.Update(id, entityhouse);
+
+                _logger.LogInformation($"House ID {id} updated successfully.");
+
+                return Ok("House Updated!" + entityhouse);
+            }
+            catch (Exception ex)
             {
-                return BadRequest("Wrong client informed");
+                _logger.LogError(ex, "An error occurred while processing the UpdateHouse method.");
+                return StatusCode(500, "An error occurred while processing the request.");
             }
-
-            await _reservationRepository.Update(id, entityReservation);
-            return Ok($"Reservation {entityReservation.id} Updated!: {entityReservation}");
         }
+
     }
 }

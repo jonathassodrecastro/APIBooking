@@ -9,10 +9,12 @@ namespace WebAPI.Controllers
     [ApiController]
     public class HouseController : ControllerBase
     {
+        private readonly ILogger<HouseController> _logger;
         private readonly IHouseRepository _houseRepository;
-        public HouseController(IHouseRepository houseRepository)
+        public HouseController(IHouseRepository houseRepository, ILogger<HouseController> logger)
         {
             _houseRepository = houseRepository;
+            _logger = logger;
         }
 
         /// <summary>
@@ -23,59 +25,90 @@ namespace WebAPI.Controllers
         [HttpPost("RegisterHouse")]
         public IActionResult RegisterHouse(EntityHouse entityhouse)
         {
-            if (entityhouse == null)
+            try
             {
-                return BadRequest("No value provided. All fields are mandatory.");
-            }
+                _logger.LogInformation("Starting the RegisterHouse method.");
 
-            var missingFields = new List<string>
+                if (entityhouse == null)
+                {
+                    _logger.LogWarning("No value provided. All fields are mandatory.");
+                    return BadRequest("No value provided. All fields are mandatory.");
+                }
+
+                var missingFields = new List<string>
+                {
+                    string.IsNullOrWhiteSpace(entityhouse.id.ToString()) ? "House ID" : null,
+                    string.IsNullOrWhiteSpace(entityhouse.available.ToString()) ? "Availability" : null,
+                }
+                    .Where(fieldName => fieldName != null)
+                    .ToList();
+
+                if (missingFields.Any())
+                {
+                    var errorMessage = "Required fields not filled: " + string.Join(", ", missingFields);
+                    _logger.LogWarning(errorMessage);
+                    return BadRequest(errorMessage);
+                }
+
+                if (entityhouse.available != 0 && entityhouse.available != 1)
+                {
+                    _logger.LogWarning("Invalid value for 'available' field. Only 0 or 1 are allowed.");
+                    return BadRequest("Invalid value for 'available' field. Only 0 or 1 are allowed.");
+                }
+
+                _houseRepository.Insert(entityhouse);
+
+                _logger.LogInformation($"House {entityhouse.id} successfully saved.");
+
+                return Ok($"Operation completed successfully. House {entityhouse.id} successfully saved");
+            }
+            catch (Exception ex)
             {
-                string.IsNullOrWhiteSpace(entityhouse.id.ToString()) ? "House ID" : null,
-                string.IsNullOrWhiteSpace(entityhouse.available.ToString()) ? "Availability" : null,
+                _logger.LogError(ex, "An error occurred while processing the RegisterHouse method.");
+                return StatusCode(500, "An error occurred while processing the request.");
             }
-                .Where(fieldName => fieldName != null)
-                .ToList();
-
-            if (missingFields.Any())
-            {
-                var errorMessage = "Required fields not filled: " + string.Join(", ", missingFields);
-                return BadRequest(errorMessage);
-            }
-
-            if (entityhouse.available != 0 && entityhouse.available != 1)
-            {
-                return BadRequest("Invalid value for 'available' field. Only 0 or 1 are allowed.");
-            }
-
-            _houseRepository.Insert(entityhouse);
-
-            return Ok($"Operation completed successfully. House {entityhouse.id} succesfully saved");
         }
+
 
         /// <summary>
         /// Retrieves information about a specific house by its ID.
         /// </summary>
         /// <param name="houseId">The ID of the house to retrieve.</param>
         /// <returns>The house information.</returns>
-        [HttpGet("FindHouse")]
+        [HttpGet("GetHouseById")]
         public async Task<IActionResult> GetHouseById(int id)
         {
-            if (id == 0)
+            try
             {
-                return BadRequest("Please fill in the required fields.");
+                _logger.LogInformation("Starting the GetHouseById method.");
+
+                if (id == 0)
+                {
+                    _logger.LogWarning("Please fill in the required fields.");
+                    return BadRequest("Please fill in the required fields.");
+                }
+
+                var house = await _houseRepository.GetById(id);
+
+                if (house == null)
+                {
+                    _logger.LogWarning("No House found. Id must be valid.");
+                    return BadRequest("No House found. Id must be valid.");
+                }
+
+                string availability = (house.available == 0) ? "Available" : "Not available";
+
+                _logger.LogInformation($"House {house.id} found: {availability}");
+
+                return Ok($"House Found! - {house.id}: {availability}!");
             }
-
-            var house = await _houseRepository.GetById(id);
-
-            if (house == null)
+            catch (Exception ex)
             {
-                return BadRequest("No House found. Id must be valid.");
+                _logger.LogError(ex, "An error occurred while processing the GetHouseById method.");
+                return StatusCode(500, "An error occurred while processing the request.");
             }
-
-            string availability = (house.available == 0) ? "Available" : "Not available";
-
-            return Ok($"House Found! - {house.id}: {availability}!");
         }
+
 
         /// <summary>
         /// Retrieves a list of all available houses.
@@ -83,28 +116,41 @@ namespace WebAPI.Controllers
         /// <returns>A list of house information.</returns>
         [HttpGet("GetAllHouses")]
         public async Task<IActionResult> GetHouses()
-         {
-            var houses = await _houseRepository.GetAll();
-
-            List<EntityHouse> houseList = houses.ToList();
-
-            List<object> responseList = new List<object>();
-
-            foreach (var house in houseList)
+        {
+            try
             {
-                string availability = (house.available == 0) ? "Available" : "Not available";
+                _logger.LogInformation("Starting the GetHouses method.");
 
-                var houseWithAvailability = new
+                var houses = await _houseRepository.GetAll();
+
+                List<EntityHouse> houseList = houses.ToList();
+
+                List<object> responseList = new List<object>();
+
+                foreach (var house in houseList)
                 {
-                    house.id,
-                    Availability = availability
-                };
+                    string availability = (house.available == 0) ? "Available" : "Not available";
 
-                responseList.Add(houseWithAvailability);
+                    var houseWithAvailability = new
+                    {
+                        house.id,
+                        Availability = availability
+                    };
+
+                    responseList.Add(houseWithAvailability);
+                }
+
+                _logger.LogInformation("Houses retrieved successfully.");
+
+                return Ok(responseList);
             }
-
-            return Ok(responseList);
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while processing the GetHouses method.");
+                return StatusCode(500, "An error occurred while processing the request.");
+            }
         }
+
 
         /// <summary>
         /// Deletes a house by its ID.
@@ -114,22 +160,35 @@ namespace WebAPI.Controllers
         [HttpDelete("DeleteHouse")]
         public async Task<IActionResult> DeleteHouseById(int id)
         {
-            if (id == 0)
+            try
             {
-                return BadRequest("Please fill in the required fields.");
+                _logger.LogInformation($"Starting the DeleteHouseById method for House ID {id}.");
+
+                if (id == 0)
+                {
+                    return BadRequest("Please fill in the required fields.");
+                }
+
+                var house = await _houseRepository.GetById(id);
+
+                if (house == null)
+                {
+                    return BadRequest("No House found. Id must be valid.");
+                }
+
+                await _houseRepository.Delete(id);
+
+                _logger.LogInformation($"House ID {id} deleted successfully.");
+
+                return Ok("House Deleted!");
             }
-
-            var client = await _houseRepository.GetById(id);
-
-            if (client == null)
+            catch (Exception ex)
             {
-                return BadRequest("No House found. Id must be valid.");
+                _logger.LogError(ex, "An error occurred while processing the DeleteHouseById method.");
+                return StatusCode(500, "An error occurred while processing the request.");
             }
-
-            await _houseRepository.Delete(id);
-
-            return Ok("House Deleted!");
         }
+
 
         /// <summary>
         /// Updates information for a specific house.
@@ -140,18 +199,32 @@ namespace WebAPI.Controllers
         [HttpPut("UpdateHouse")]
         public async Task<IActionResult> UpdateHouse(int id, EntityHouse entityhouse)
         {
-            if (entityhouse == null)
+            try
             {
-                return BadRequest("House not found");
-            }
+                _logger.LogInformation($"Starting the UpdateHouse method for House ID {id}.");
 
-            if (id != entityhouse.id)
+                if (entityhouse == null)
+                {
+                    return BadRequest("House not found");
+                }
+
+                if (id != entityhouse.id)
+                {
+                    return BadRequest("Wrong house informed");
+                }
+
+                await _houseRepository.Update(id, entityhouse);
+
+                _logger.LogInformation($"House ID {id} updated successfully.");
+
+                return Ok("House Updated!" + entityhouse);
+            }
+            catch (Exception ex)
             {
-                return BadRequest("Wrong house informed");
+                _logger.LogError(ex, "An error occurred while processing the UpdateHouse method.");
+                return StatusCode(500, "An error occurred while processing the request.");
             }
-
-            await _houseRepository.Update(id, entityhouse);
-            return Ok("House Updated!" + entityhouse);
         }
+
     }
 }
