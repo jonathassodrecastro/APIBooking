@@ -33,7 +33,7 @@ namespace WebAPI.Controllers
         {
             try
             {
-                var house = await _houseRepository.GetById(entityhouse.id);
+                var house = await _houseServices.GetEntityHouse(entityhouse.id);
 
                 if (house == null)
                 {
