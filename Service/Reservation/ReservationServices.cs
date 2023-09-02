@@ -15,6 +15,8 @@ using System.Text.Json;
 using System.Net.Http;
 using System.Text.Json.Nodes;
 using System.Collections;
+using APIBooking.Domain.Models.Request.Reservations;
+using APIBooking.Domain.Exceptions;
 
 namespace Service.Reservation
 {
@@ -60,10 +62,20 @@ namespace Service.Reservation
             return reservationList.OrderBy(reservation => reservation.id);
         }
 
-        public async Task<EntityReservation> UpdateReservation(int id, EntityReservation reservation) 
+        public async Task<EntityReservation> UpdateReservation(int id, UpdateReservationRequest reservation) 
         {
-            await _reservationRepository.Update(id, reservation);
-            return reservation;
+            var reservartionDB = await _reservationRepository.GetById(id);
+
+            if (reservartionDB == null)
+            {
+                _logger.LogError("No reservation found for this ID.");
+                throw new NotFoundException("Reservation Not found");
+            }
+            
+            reservartionDB.Update(reservation);
+            await _reservationRepository.Update(reservartionDB.id, reservartionDB);
+            return reservartionDB;
+
         }
         //private async Task<HttpResponseMessage> CallDiscountApiAsync(EntityReservation entityReservation, ILogger logger)
         //{

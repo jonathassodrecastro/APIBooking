@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using APIBooking.Domain.Models.Request.Reservations;
+using System.Text.Json.Serialization;
 
 namespace APIBooking.Domain.Entities
 {
@@ -24,5 +25,18 @@ namespace APIBooking.Domain.Entities
         public int houseId { get; set; }
         [JsonPropertyName("discountCode")]
         public string discountCode { get; set; }
+
+        public void Update(UpdateReservationRequest request)
+        {
+            clientId = request.ClientId;
+            clientName = request.ClientName;
+            clientLastname = request.ClientLastName;
+            clientAge = request.ClientAge;
+            clientPhoneNumber = request.ClientPhoneNumber;
+            startDate = request.StartDate;
+            endDate = request.EndDate;
+            houseId = request.HouseId;
+            discountCode = request.DiscountCode;
+        }
     }
 }
