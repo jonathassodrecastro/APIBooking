@@ -26,18 +26,18 @@ namespace WebAPI.Controllers
         /// <summary>
         /// Registers a new house in the system.
         /// </summary>
-        /// <param name="house">The details of the house to be registered.</param>
+        /// <param name="entityhouse">The details of the house to be registered.</param>
         /// <returns>The registered house information.</returns>
         [HttpPost("RegisterHouse")]
         public async Task<IActionResult> RegisterHouse(EntityHouse entityhouse)
         {
             try
             {
-                var house = await _houseServices.GetEntityHouse(entityhouse.id);
+                var house = await _houseServices.GetEntityHouse(entityhouse.Id);
 
                 if (house == null)
                 {
-                    return Conflict($"No house found with ID: {entityhouse.id}");
+                    return Conflict($"No house found with ID: {entityhouse.Id}");
                 }
                 else
                 {

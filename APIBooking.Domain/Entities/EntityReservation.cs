@@ -1,42 +1,43 @@
-﻿using APIBooking.Domain.Models.Request.Reservations;
+﻿using APIBooking.Domain.Models.Requests;
 using System.Text.Json.Serialization;
 
 namespace APIBooking.Domain.Entities
 {
     public class EntityReservation
     {
-        [JsonPropertyName("reservation_id")]
-        public int id { get; set; }
-        [JsonPropertyName("clientId")]
-        public int clientId { get; set; }
-        [JsonPropertyName("clientName")]
-        public string clientName { get; set; }
-        [JsonPropertyName("clientLastname")]
-        public string clientLastname { get; set; }
-        [JsonPropertyName("clientAge")]
-        public int clientAge { get; set; }
-        [JsonPropertyName("clientPhoneNumber")]
-        public string clientPhoneNumber { get; set; }
-        [JsonPropertyName("startDate")]
-        public DateTime startDate { get; set; }
-        [JsonPropertyName("endDate")]
-        public DateTime endDate { get; set; }
-        [JsonPropertyName("houseId")]
-        public int houseId { get; set; }
-        [JsonPropertyName("discountCode")]
-        public string discountCode { get; set; }
+        [JsonPropertyName("Reservation_id")]
+        public int Id { get; set; }
+        [JsonPropertyName("ClientId")]
+        public int ClientId { get; set; }
+        [JsonPropertyName("ClientName")]
+        public string ClientName { get; set; }
+        [JsonPropertyName("ClientLastname")]
+        public string ClientLastName { get; set; }
+        [JsonPropertyName("ClientAge")]
+        public int ClientAge { get; set; }
+        [JsonPropertyName("ClientPhoneNumber")]
+        public string ClientPhoneNumber { get; set; }
+        [JsonPropertyName("StartDate")]
+        public DateTime StartDate { get; set; }
+        [JsonPropertyName("EndDate")]
+        public DateTime EndDate { get; set; }
+        [JsonPropertyName("HouseId")]
+        public int HouseId { get; set; }
+        [JsonPropertyName("DiscountCode")]
+        public string DiscountCode { get; set; }
 
         public void Update(UpdateReservationRequest request)
         {
-            clientId = request.ClientId;
-            clientName = request.ClientName;
-            clientLastname = request.ClientLastName;
-            clientAge = request.ClientAge;
-            clientPhoneNumber = request.ClientPhoneNumber;
-            startDate = request.StartDate;
-            endDate = request.EndDate;
-            houseId = request.HouseId;
-            discountCode = request.DiscountCode;
+            ClientId = request.ClientId;
+            ClientName = request.ClientName;
+            ClientLastName = request.ClientLastName;
+            ClientAge = request.ClientAge;
+            ClientPhoneNumber = request.ClientPhoneNumber;
+            StartDate = request.StartDate;
+            EndDate = request.EndDate;
+            HouseId = request.HouseId;
+            DiscountCode = request.DiscountCode;
         }
+
     }
 }

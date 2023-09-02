@@ -50,14 +50,14 @@ namespace Service.Client
         public async Task<IEnumerable<EntityClient>> GetAllClients()
         {
             var clientList = await _clientrepository.GetAll();
-            return clientList.OrderBy(client => client.id);
+            return clientList.OrderBy(client => client.Id);
         }
 
         public async Task<IEnumerable<EntityClient>> DeleteClient(int id)
         {
             await _clientrepository.Delete(id);
             var clientList = await _clientrepository.GetAll();
-            return clientList.OrderBy(client => client.id);
+            return clientList.OrderBy(client => client.Id);
         }
 
         public async Task<EntityClient> UpdateHouse(int id, EntityClient client)

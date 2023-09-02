@@ -23,15 +23,13 @@ namespace Service.House
     {
         
         private readonly IHouseRepository _houserepository;
-        private readonly ILogger<HouseServices> _logger;
-        private readonly IHttpClientFactory _httpClientFactory;
 
-        public HouseServices(ILogger<HouseServices> logger, IHouseRepository houserepository, IHttpClientFactory httpClientFactory)
+
+        public HouseServices(IHouseRepository houserepository)
         {
             
             _houserepository = houserepository;
-            _logger = logger;
-            _httpClientFactory = httpClientFactory;
+
         }
 
         public Task<EntityHouse> GetEntityHouse(int id)
@@ -50,14 +48,14 @@ namespace Service.House
         public async Task<IEnumerable<EntityHouse>> GetAllHouses()
         {
             var houseList = await _houserepository.GetAll();
-            return houseList.OrderBy(house => house.id);
+            return houseList.OrderBy(house => house.Id);
         }
 
         public async Task<IEnumerable<EntityHouse>> DeleteHouse(int id)
         {
             await _houserepository.Delete(id);
             var houseList = await _houserepository.GetAll();
-            return houseList.OrderBy(house => house.id);
+            return houseList.OrderBy(house => house.Id);
         }
 
         public async Task<EntityHouse> UpdateHouse(int id, EntityHouse house)

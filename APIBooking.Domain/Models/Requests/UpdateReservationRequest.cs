@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace APIBooking.Domain.Models.Request.Reservations
+namespace APIBooking.Domain.Models.Requests
 {
     public class UpdateReservationRequest
     {

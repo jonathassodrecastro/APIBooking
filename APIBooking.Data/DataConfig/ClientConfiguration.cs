@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using APIBooking.Domain.Entities;
+﻿using APIBooking.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -14,22 +9,22 @@ namespace APIBooking.Data.DataConfig
         public void Configure(EntityTypeBuilder<EntityClient> builder)
         {
             builder.ToTable("Clients");
-            builder.HasKey(k => k.id);
-            builder.Property(k => k.id).ValueGeneratedOnAdd();
+            builder.HasKey(k => k.Id);
+            builder.Property(k => k.Id).ValueGeneratedOnAdd();
 
-            builder.Property(x => x.name)
+            builder.Property(x => x.Name)
                 .HasColumnType("varchar(50)")
                 .IsRequired();
 
-            builder.Property(x => x.lastname)
+            builder.Property(x => x.LastName)
                .HasColumnType("varchar(50)")
                .IsRequired();
 
-            builder.Property(x => x.age)
+            builder.Property(x => x.Age)
                .HasColumnType("smallint")
                .IsRequired();
 
-            builder.Property(x => x.phoneNumber)
+            builder.Property(x => x.PhoneNumber)
                .HasColumnType("varchar(30)")
                .IsRequired();
         }

@@ -9,17 +9,17 @@ namespace APIBooking.Domain.Extensions
         {
             return new ReservationResponse
             {
-                Id = entity.id,
-                ClientId = entity.clientId,
-                ClientName = entity.clientName,
-                ClientLastName = entity.clientLastname,
-                ClientFullName = $"{entity.clientName} {entity.clientLastname}",
-                ClientAge = entity.clientAge,
-                ClientPhoneNumber = entity.clientPhoneNumber,
-                StartDate = entity.startDate,
-                EndDate = entity.endDate,
-                HouseId = entity.houseId,
-                DiscountCode = entity.discountCode
+                Id = entity.Id,
+                ClientId = entity.ClientId,
+                ClientName = entity.ClientName,
+                ClientLastName = entity.ClientLastName,
+                ClientFullName = $"{entity.ClientName} {entity.ClientLastName}",
+                ClientAge = entity.ClientAge,
+                ClientPhoneNumber = entity.ClientPhoneNumber,
+                StartDate = entity.StartDate,
+                EndDate = entity.EndDate,
+                HouseId = entity.HouseId,
+                DiscountCode = entity.DiscountCode
             };
         }
     }

@@ -27,14 +27,14 @@ namespace WebAPI.Controllers
         /// <summary>
         /// Registers a new client.
         /// </summary>
-        /// <param name="newClient">The client information to be registered.</param>
+        /// <param name="entityClient">The client information to be registered.</param>
         /// <returns>The registered client.</returns>
         [HttpPost("RegisterClient")]
         public async Task<IActionResult> RegisterClient(EntityClient entityClient)
         {
             try
             {
-                var client = await _clientRepository.GetById(entityClient.id);
+                var client = await _clientRepository.GetById(entityClient.Id);
 
                 if (client == null)
                 {

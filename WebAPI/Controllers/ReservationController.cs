@@ -1,7 +1,8 @@
 ﻿using APIBooking.Domain.Entities;
 using APIBooking.Domain.Exceptions;
 using APIBooking.Domain.Extensions;
-using APIBooking.Domain.Models.Request.Reservations;
+using APIBooking.Domain.Models.Requests;
+using Azure.Core;
 using Microsoft.AspNetCore.Mvc;
 using Repositories.Interface;
 using Service.Reservation;
@@ -12,18 +13,13 @@ namespace WebAPI.Controllers
     [ApiController]
     public class ReservationController : ControllerBase
     {
-        private readonly IReservationRepository _reservationRepository;
-        private readonly IHouseRepository _houseRepository;
-        private readonly IHttpClientFactory _httpClientFactory;
+
         private readonly ILogger<ReservationController> _logger;
         private readonly ReservationServices _reservationServices;
        
 
-        public ReservationController(IReservationRepository reservationRepository, IHouseRepository houseRepository, IHttpClientFactory httpClientFactory, ILogger<ReservationController> logger, ReservationServices reservationServices)
+        public ReservationController(ILogger<ReservationController> logger, ReservationServices reservationServices)
         {
-            _reservationRepository = reservationRepository;
-            _houseRepository = houseRepository;
-            _httpClientFactory = httpClientFactory;
             _logger = logger;
             _reservationServices = reservationServices;
         }
@@ -38,27 +34,21 @@ namespace WebAPI.Controllers
         /// <response code="400"> Request error. Return Error</response>
         /// <response code="409">No house found with ID</response>
         [HttpPost]
-        public async Task<IActionResult> RegisterReservation(EntityReservation entityReservation)
+        public async Task<IActionResult> RegisterReservation(EntityReservation request)
         {
-
-            try 
+            try
             {
-                var house = await _houseRepository.GetById(entityReservation.houseId);
-
-                if (house == null)
-                {
-                    return Conflict($"No house found with ID: {entityReservation.houseId}");
-                }
-                else
-                {
-                    var reservation = await _reservationServices.RegisterReservation(entityReservation);
-                    return Ok(reservation);
-
-                }
+                var reservation = await _reservationServices.RegisterReservation(request);
+                return Ok(reservation.ToResponse());
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(ex.Message);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ex.InnerException?.Message ?? "An internal error occurred.");
+                _logger.LogError(ex, "An error occurred while processing the UpdateReservation method.");
+                return StatusCode(500, "An internal error occurred.");
             }
         }
 

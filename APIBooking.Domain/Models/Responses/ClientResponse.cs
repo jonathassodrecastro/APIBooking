@@ -1,8 +1,8 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace APIBooking.Domain.Entities
+namespace APIBooking.Domain.Models.Responses
 {
-    public class EntityClient
+    public class ClientResponse
     {
         [JsonPropertyName("Id")]
         public int Id { get; set; }
@@ -11,7 +11,7 @@ namespace APIBooking.Domain.Entities
         [JsonPropertyName("LastName")]
         public string LastName { get; set; }
         [JsonPropertyName("Age")]
-        public int Age{ get; set; }
+        public int Age { get; set; }
         [JsonPropertyName("PhoneNumber")]
         public string PhoneNumber { get; set; }
     }

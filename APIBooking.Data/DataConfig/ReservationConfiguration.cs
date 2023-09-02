@@ -14,42 +14,42 @@ namespace APIBooking.Data.DataConfig
         public void Configure(EntityTypeBuilder<EntityReservation> builder)
         {
             builder.ToTable("Reservation");
-            builder.HasKey(k => k.id);
-            builder.Property(k => k.id).ValueGeneratedOnAdd();
+            builder.HasKey(k => k.Id);
+            builder.Property(k => k.Id).ValueGeneratedOnAdd();
 
-            builder.Property(x => x.clientId)
+            builder.Property(x => x.ClientId)
                 .HasColumnType("int")
                 .IsRequired();
 
-            builder.Property(x => x.clientName)
+            builder.Property(x => x.ClientName)
                 .HasColumnType("varchar(50)")
                 .IsRequired();
 
-            builder.Property(x => x.clientLastname)
+            builder.Property(x => x.ClientLastName)
                .HasColumnType("varchar(50)")
                .IsRequired();
 
-            builder.Property(x => x.clientAge)
+            builder.Property(x => x.ClientAge)
                .HasColumnType("smallint")
                .IsRequired();
 
-            builder.Property(x => x.clientPhoneNumber)
+            builder.Property(x => x.ClientPhoneNumber)
                .HasColumnType("varchar(30)")
                .IsRequired();
 
-            builder.Property(x => x.startDate)
+            builder.Property(x => x.StartDate)
                .HasColumnType("DATE")
                .IsRequired();
 
-            builder.Property(x => x.endDate)
+            builder.Property(x => x.EndDate)
                .HasColumnType("DATE")
                .IsRequired();
 
-            builder.Property(x => x.houseId)
+            builder.Property(x => x.HouseId)
                .HasColumnType("int")
                .IsRequired();
 
-            builder.Property(x => x.discountCode)
+            builder.Property(x => x.DiscountCode)
                .HasColumnType("varchar(10)")
                .IsRequired();
         }

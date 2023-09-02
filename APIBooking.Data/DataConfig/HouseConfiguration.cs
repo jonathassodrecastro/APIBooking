@@ -9,10 +9,10 @@ namespace APIBooking.Data.DataConfig
         public void Configure(EntityTypeBuilder<EntityHouse> builder)
         {
             builder.ToTable("House");
-            builder.HasKey(k => k.id);
-            builder.Property(k => k.id).ValueGeneratedOnAdd();
+            builder.HasKey(k => k.Id);
+            builder.Property(k => k.Id).ValueGeneratedOnAdd();
 
-            builder.Property(x => x.available)
+            builder.Property(x => x.Available)
                 .HasColumnType("smallint")
                 .IsRequired();
 

@@ -1,79 +1,79 @@
 ﻿using APIBooking.Domain.Entities;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Polly;
-using Polly.Retry;
 using Repositories.Interface;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Net;
-using Azure.Core;
-using System.Text.Json;
-using System.Net.Http;
-using System.Text.Json.Nodes;
-using System.Collections;
-using APIBooking.Domain.Models.Request.Reservations;
 using APIBooking.Domain.Exceptions;
+using APIBooking.Domain.Models.Requests;
+using Repositories.Repository;
 
 namespace Service.Reservation
 {
     public class ReservationServices
     {
-        
-        private readonly IReservationRepository _reservationRepository;
-        private readonly IHouseRepository _house;
-        private readonly ILogger<ReservationServices> _logger;
-        private readonly IHttpClientFactory _httpClientFactory;
 
-        public ReservationServices(IReservationRepository reservationRepository, ILogger<ReservationServices> logger, IHouseRepository house, IHttpClientFactory httpClientFactory)
+        private readonly IReservationRepository _reservationRepository;
+        private readonly ILogger<ReservationServices> _logger;
+        private readonly IHouseRepository _houseRepository;
+
+   
+
+        public ReservationServices(IReservationRepository reservationRepository,
+                                   ILogger<ReservationServices> logger,
+                                   IHouseRepository houseRepository)
         {
             _reservationRepository = reservationRepository;
-            _house = house;
             _logger = logger;
-            _httpClientFactory = httpClientFactory;
+            _houseRepository = houseRepository;
+
         }
 
-        public Task<EntityReservation> GetEntityReservation(int id)
+        public Task<EntityReservation> GetEntityReservation(int Id)
         {
-            var reservation = _reservationRepository.GetById(id);
+            var reservation = _reservationRepository.GetById(Id);
             return reservation;
         }
 
-        public async Task<EntityReservation> RegisterReservation(EntityReservation reservation) 
+        public async Task<EntityReservation> RegisterReservation(EntityReservation reservation)
         {
-                
-                await _reservationRepository.Insert(reservation);
-                return reservation;
+
+            //Checking the House ID.
+            var House = await _houseRepository.GetById(reservation.HouseId);
+
+            //Validating if the House exists.
+            if (House == null)
+            {
+                _logger.LogError("No House found for this Id.");
+                throw new NotFoundException("House Not found");
+            }
+
+            await _reservationRepository.Insert(reservation);
+            return reservation;
         }
 
         public async Task<IEnumerable<EntityReservation>> GetAllReservations()
         {
             var reservationList = await _reservationRepository.GetAll();
-            return reservationList.OrderBy(reservation => reservation.id);
+            return reservationList.OrderBy(reservation => reservation.Id);
         }
 
-        public async Task<IEnumerable<EntityReservation>> DeleteReservation(int id)
+        public async Task<IEnumerable<EntityReservation>> DeleteReservation(int Id)
         {
-            await _reservationRepository.Delete(id);
+            await _reservationRepository.Delete(Id);
             var reservationList = await _reservationRepository.GetAll();
-            return reservationList.OrderBy(reservation => reservation.id);
+            return reservationList.OrderBy(reservation => reservation.Id);
         }
 
-        public async Task<EntityReservation> UpdateReservation(int id, UpdateReservationRequest reservation) 
+        public async Task<EntityReservation> UpdateReservation(int Id, UpdateReservationRequest reservation)
         {
-            var reservartionDB = await _reservationRepository.GetById(id);
+            var reservartionDB = await _reservationRepository.GetById(Id);
 
             if (reservartionDB == null)
             {
-                _logger.LogError("No reservation found for this ID.");
+                _logger.LogError("No reservation found for this Id.");
                 throw new NotFoundException("Reservation Not found");
             }
-            
+
             reservartionDB.Update(reservation);
-            await _reservationRepository.Update(reservartionDB.id, reservartionDB);
+            await _reservationRepository.Update(reservartionDB.Id, reservartionDB);
             return reservartionDB;
 
         }
