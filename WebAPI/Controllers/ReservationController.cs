@@ -21,11 +21,6 @@ namespace WebAPI.Controllers
         private readonly ReservationServices _reservationServices;
         //private readonly IRetryPolicyProvider _retryPolicyProvider;
 
-        const int maxRetryAttempts = 3;
-        const int retryDelayMilliseconds = 1000;
-        const int timeoutMilliseconds = 5000; // 5 seconds
-
-
         public ReservationController(IReservationRepository reservationRepository, IHouseRepository houseRepository, IHttpClientFactory httpClientFactory, ILogger<ReservationController> logger, ReservationServices reservationServices)
         {
             _reservationRepository = reservationRepository;
@@ -79,7 +74,7 @@ namespace WebAPI.Controllers
             {
                 _logger.LogInformation($"Starting the GetReservationByID method. Searching for ID: {id}");
 
-                EntityReservation reservation = await _reservationServices.GetEntityReservation(id);
+                var reservation = await _reservationServices.GetEntityReservation(id);
                 
                 if (reservation == null)
                 {
