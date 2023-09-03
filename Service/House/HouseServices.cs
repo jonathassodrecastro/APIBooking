@@ -1,20 +1,5 @@
 ﻿using APIBooking.Domain.Entities;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using Polly;
-using Polly.Retry;
 using Repositories.Interface;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Net;
-using Azure.Core;
-using System.Text.Json;
-using System.Net.Http;
-using System.Text.Json.Nodes;
-using System.Collections;
 
 
 namespace Service.House

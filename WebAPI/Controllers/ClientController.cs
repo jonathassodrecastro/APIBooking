@@ -1,11 +1,7 @@
 ﻿using APIBooking.Domain.Entities;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Polly;
 using Repositories.Interface;
-using Repositories.Repository;
 using Service.Client;
-using Service.House;
 
 namespace WebAPI.Controllers
 {

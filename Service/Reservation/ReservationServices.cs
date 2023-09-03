@@ -3,7 +3,6 @@ using APIBooking.Domain.Exceptions;
 using APIBooking.Domain.Models.Requests;
 using Microsoft.Extensions.Logging;
 using Repositories.Interface;
-using System.Net;
 using System.Text;
 using System.Text.Json;
 
