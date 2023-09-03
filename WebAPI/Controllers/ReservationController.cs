@@ -1,10 +1,7 @@
-﻿using APIBooking.Domain.Entities;
-using APIBooking.Domain.Exceptions;
+﻿using APIBooking.Domain.Exceptions;
 using APIBooking.Domain.Extensions;
 using APIBooking.Domain.Models.Requests;
-using Azure.Core;
 using Microsoft.AspNetCore.Mvc;
-using Repositories.Interface;
 using Service.Reservation;
 
 namespace WebAPI.Controllers
@@ -16,7 +13,7 @@ namespace WebAPI.Controllers
 
         private readonly ILogger<ReservationController> _logger;
         private readonly ReservationServices _reservationServices;
-       
+
 
         public ReservationController(ILogger<ReservationController> logger, ReservationServices reservationServices)
         {
@@ -34,7 +31,7 @@ namespace WebAPI.Controllers
         /// <response code="400"> Request error. Return Error</response>
         /// <response code="409">No house found with ID</response>
         [HttpPost]
-        public async Task<IActionResult> RegisterReservation(EntityReservation request)
+        public async Task<IActionResult> RegisterReservation(UpdateReservationRequest request)
         {
             try
             {
@@ -69,12 +66,6 @@ namespace WebAPI.Controllers
                 _logger.LogInformation($"Starting the GetReservationByID method. Searching for ID: {id}");
 
                 var reservation = await _reservationServices.GetEntityReservation(id);
-                
-                if (reservation == null)
-                {
-                    _logger.LogWarning("Reservation not found.");
-                    return Conflict("No Reservation found. Id must be valid.");
-                }
 
                 _logger.LogInformation("Reservation found.");
                 return Ok(reservation.ToResponse());
@@ -101,14 +92,6 @@ namespace WebAPI.Controllers
                 _logger.LogInformation("Starting the GetAllReservations method");
 
                 var reservation = await _reservationServices.GetAllReservations();
-
-                if (reservation == null)
-                {
-                    _logger.LogWarning("Reservations not found.");
-                    return Conflict("No Reservations found.");
-                }
-
-                _logger.LogInformation("Reservations found.");
                 return Ok(reservation.Select(x => x.ToResponse()));
             }
             catch (Exception ex)
@@ -122,12 +105,12 @@ namespace WebAPI.Controllers
         /// <summary>
         /// Deletes a reservation based on the provided reservation ID.
         /// </summary>
-        /// <param name="reservationId">The ID of the reservation to be deleted.</param>
+        /// <param name="id">The ID of the reservation to be deleted.</param>
         /// <response code="200">Return OK</response>
         /// <response code="400"> Request error. Return Error</response>
         /// <returns>Returns OK if the reservation was successfully deleted, NotFound if the reservation was not found, or BadRequest if an error occurred.</returns>
-        [HttpDelete]
-        public async Task<IActionResult> DeleteReservationById(int id)
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteReservationById([FromRoute] int id)
         {
             try
             {
@@ -135,13 +118,7 @@ namespace WebAPI.Controllers
 
                 var reservation = await _reservationServices.DeleteReservation(id);
 
-                if (id == 0)
-                {
-                    _logger.LogWarning("Reservation not found. No Id provided.");
-                    return BadRequest("No Id provided.");
-                }
-
-                _logger.LogInformation("Reservations found.");
+                _logger.LogInformation("Reservation deleted.");
                 return Ok(reservation);
             }
             catch (Exception ex)
@@ -161,19 +138,19 @@ namespace WebAPI.Controllers
         /// <response code="409">No reservation found</response>
         /// <returns>Returns OK if the reservation was successfully updated, Conflict if the reservation was not found, or BadRequest if an error occurred.</returns>
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateReservation([FromRoute]int id, UpdateReservationRequest request)
+        public async Task<IActionResult> UpdateReservation([FromRoute] int id, UpdateReservationRequest request)
         {
             try
             {
                 var reservation = await _reservationServices.UpdateReservation(id, request);
-                return Ok(reservation.ToResponse()); 
+                return Ok(reservation.ToResponse());
             }
             catch (NotFoundException ex)
             {
-                
+
                 return NotFound(ex.Message);
             }
-            catch(Exception ex) 
+            catch (Exception ex)
             {
                 _logger.LogError(ex, "An error occurred while processing the UpdateReservation method.");
                 return StatusCode(500, "An internal error occurred.");
