@@ -17,11 +17,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "APIBooking.Domain", "APIBoo
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebAPI", "WebAPI\WebAPI.csproj", "{CC996EF9-172B-4D2B-91A6-1BC9EA554654}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Repositories", "Repositories\Repositories.csproj", "{8BF18C11-2EBC-4711-B64F-40BA8ACCB5CE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "APIBooking.Repositories", "Repositories\APIBooking.Repositories.csproj", "{8BF18C11-2EBC-4711-B64F-40BA8ACCB5CE}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Services", "Services", "{7BAA3FCA-DB99-4881-9D89-4CE648DABFF8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Service", "Service\Service.csproj", "{96F2C22D-DEC8-47D3-9DA6-AA766056AC45}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "APIBooking.Service", "Service\APIBooking.Service.csproj", "{96F2C22D-DEC8-47D3-9DA6-AA766056AC45}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

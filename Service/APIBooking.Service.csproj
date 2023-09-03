@@ -28,7 +28,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\APIBooking.Domain\APIBooking.Domain.csproj" />
-    <ProjectReference Include="..\Repositories\Repositories.csproj" />
+    <ProjectReference Include="..\Repositories\APIBooking.Repositories.csproj" />
   </ItemGroup>
 
 </Project>

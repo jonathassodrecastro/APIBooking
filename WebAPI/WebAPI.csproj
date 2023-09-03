@@ -27,8 +27,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\APIBooking.Data\APIBooking.Data.csproj" />
-    <ProjectReference Include="..\Repositories\Repositories.csproj" />
-    <ProjectReference Include="..\Service\Service.csproj" />
+    <ProjectReference Include="..\Repositories\APIBooking.Repositories.csproj" />
+    <ProjectReference Include="..\Service\APIBooking.Service.csproj" />
   </ItemGroup>
 
 </Project>
