@@ -62,8 +62,7 @@ namespace Service.Reservation
                 catch 
                 {
                     throw new SQLErrorException("Execute query error");
-                }
-               
+                }  
             }
             else
             {
@@ -79,7 +78,6 @@ namespace Service.Reservation
                 _logger.LogError("No reservation found.");
                 throw new NotFoundException("Reservation Not found");
             }
-
             return reservationList.OrderBy(reservation => reservation.Id);
         }
 
@@ -103,7 +101,6 @@ namespace Service.Reservation
             reservartionDB.Update(reservation);
             await _reservationRepository.Update(reservartionDB.Id, reservartionDB);
             return reservartionDB;
-
         }
 
         private async Task<bool> CallDiscountApiAsync(EntityReservation reservation)
@@ -119,10 +116,8 @@ namespace Service.Reservation
             // Serialize object
             var discountRequestBody = JsonSerializer.Serialize(discountRequest);
 
-
             // Send request to API Discount
             var client = _httpClientFactory.CreateClient("DiscountCode");
-
 
             try
             {
