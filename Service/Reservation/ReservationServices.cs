@@ -24,6 +24,14 @@ namespace Service.Reservation
             _httpClientFactory = httpClientFactory;
         }
 
+        public ReservationServices(ILogger<ReservationServices> mockLogger, IReservationRepository mockRepo, IHouseRepository mockHouse, IHttpClientFactory mockHttpClient)
+        {
+            _logger = mockLogger;
+            _reservationRepository = mockRepo;
+            _houseRepository = mockHouse;
+            _httpClientFactory = mockHttpClient;
+        }
+
         public Task<EntityReservation> GetEntityReservation(int Id)
         {
             var reservation = _reservationRepository.GetById(Id);
